@@ -8,7 +8,7 @@ import EditItemModal from './components/EditItemModal';
 import AdminDashboard from './components/AdminDashboard';
 import API_URL from './config.js';
 
-const socket = io.connect(fetch(`${API_URL}/api/items`))
+const socket = io(API_URL)
 const AVATAR_OPTIONS = ['🦊', '🐱', '🐼', '🦁', '🐸', '🐨', '🤖', '🥷', '🚀', '🌟', '👻', '👾'];
 
 function App() {
@@ -149,7 +149,7 @@ function App() {
 
   const fetchItemsDatabase = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/items')
+      const response = await fetch(`${API_URL}/api/items`)
       const databaseItems = await response.json()
       setItems(databaseItems)
     } catch (err) { console.error("Error fetching items:", err) }
@@ -158,16 +158,16 @@ function App() {
   const fetchMyInbox = async () => {
     if (!user?.id) return
     try {
-      const response = await fetch(`http://localhost:5000/api/chat-rooms/${user.id}`)
+      const response = await fetch(`${API_URL}/api/chat-rooms/${user.id}`)
       const data = await response.json()
       setMyConversations(data)
     } catch (error) { console.error(error) }
   }
 
   const handleDeleteItem = async (id) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('lostFoundToken');
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/items/${id}/archive`, {
+      const res = await fetch(`${API_URL}/api/admin/items/${id}/archive`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -177,9 +177,9 @@ function App() {
 
   const handleSave = async (e, formData, id) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('lostFoundToken');
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/items/${id}`, {
+      const res = await fetch(`${API_URL}/api/admin/items/${id}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
@@ -196,7 +196,7 @@ function App() {
   const fetchAdminUserData = async () => {
     const token = localStorage.getItem('lostFoundToken');
     try {
-      const res = await fetch('http://localhost:5000/api/admin/users', {
+      const res = await fetch(`${API_URL}/api/admin/users`, {  // ✅ fixed: was single quotes
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -215,7 +215,7 @@ function App() {
   const fetchArchivedUsers = async () => {
     const token = localStorage.getItem('lostFoundToken');
     try {
-      const res = await fetch('http://localhost:5000/api/admin/archived-users', {
+      const res = await fetch(`${API_URL}/api/admin/archived-users`, {  // ✅ fixed: was single quotes
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -234,7 +234,7 @@ function App() {
     if (!window.confirm(`Are you sure you want to suspend and archive workspace for user "${userToArchive.name}"?`)) return;
     const token = localStorage.getItem('lostFoundToken')
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/users/${targetUserId}`, {
+      const res = await fetch(`${API_URL}/api/admin/users/${targetUserId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -248,37 +248,33 @@ function App() {
   }
 
   const handleRestoreUser = async (targetUserId) => {
-  const userToRestore = archivedUsers.find(u => u._id === targetUserId);
-  if (!userToRestore) return;
-
-  const token = localStorage.getItem('lostFoundToken');
-  try {
-    const res = await fetch(`http://localhost:5000/api/admin/users/${targetUserId}/restore`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    if (res.ok) {
-      setArchivedUsers(prev => prev.filter(u => u._id !== targetUserId));
-      triggerNewNotification(`Suspension lifted! Profile account for "${userToRestore.name}" restored.`);
-      fetchAdminUserData();
-    } else {
-      console.error("Restore failed:", await res.json());
+    const userToRestore = archivedUsers.find(u => u._id === targetUserId);
+    if (!userToRestore) return;
+    const token = localStorage.getItem('lostFoundToken');
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users/${targetUserId}/restore`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setArchivedUsers(prev => prev.filter(u => u._id !== targetUserId));
+        triggerNewNotification(`Suspension lifted! Profile account for "${userToRestore.name}" restored.`);
+        fetchAdminUserData();
+      } else {
+        console.error("Restore failed:", await res.json());
+      }
+    } catch (err) {
+      console.error("Restore user error:", err);
     }
-  } catch (err) {
-    console.error("Restore user error:", err);
-  }
-};
+  };
 
-  // FIX 2 & 3: Consolidated into one handler, no double e.preventDefault()
   const handleAuthenticationSubmit = async (e) => {
     e.preventDefault()
     setAuthError(''); setAuthSuccess('')
 
-    // FIX 2: forgot-password branch moved here so the form uses a single onSubmit
     if (authMode === 'forgot') {
       try {
-        const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
+        const res = await fetch(`${API_URL}/api/auth/forgot-password`, {  // ✅ fixed: was single quotes
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -308,7 +304,7 @@ function App() {
       : { name: authName, email: authEmail, password: authPassword }
 
     try {
-      const res = await fetch(`http://localhost:5000${urlEndpoint}`, {
+      const res = await fetch(`${API_URL}${urlEndpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(packetPayload)
@@ -332,7 +328,7 @@ function App() {
     e.preventDefault(); setSettingsStatus({ type: '', msg: '' })
     try {
       const token = localStorage.getItem('lostFoundToken');
-      const response = await fetch('http://localhost:5000/api/auth/update', {
+      const response = await fetch(`${API_URL}/api/auth/update`, {  // ✅ fixed: was single quotes
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -366,7 +362,7 @@ function App() {
     multipartFormStructure.append('userId', user.id)
     if (reportImage) { multipartFormStructure.append('image', reportImage) }
     try {
-      const res = await fetch('http://localhost:5000/api/items', { method: 'POST', body: multipartFormStructure })
+      const res = await fetch(`${API_URL}/api/items`, { method: 'POST', body: multipartFormStructure })  // ✅ fixed: was single quotes
       if (!res.ok) { setReportError("Failed saving."); return }
       const savedTitle = reportTitle;
       setReportTitle(''); setReportLocation(''); setReportDescription(''); setReportContact(''); setReportImage(null); setCurrentTab('dashboard')
@@ -380,13 +376,13 @@ function App() {
     if (!itemToArchive) return;
     if (!window.confirm(`Are you sure you want to archive the item listing "${itemToArchive.title}"?`)) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/items/${targetId}`, { method: 'DELETE' })
+      const res = await fetch(`${API_URL}/api/items/${targetId}`, { method: 'DELETE' })
       if (res.ok) {
-  setArchivedItems(prev => prev.filter(item => item._id !== targetId));
-  await fetchItemsDatabase();
-  await fetchArchivedItems(); // add this
-  triggerNewNotification(`Item "${itemToRestore.title}" restored successfully.`);
-}
+        setArchivedItems(prev => prev.filter(item => item._id !== targetId));
+        await fetchItemsDatabase();
+        await fetchArchivedItems();
+        triggerNewNotification(`Item "${itemToArchive.title}" archived successfully.`);
+      }
     } catch (err) { console.error(err) }
   }
 
@@ -394,7 +390,7 @@ function App() {
     const itemToRestore = archivedItems.find(item => item._id === targetId);
     if (!itemToRestore) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/items/${targetId}/restore`, { method: 'PUT' });
+      const res = await fetch(`${API_URL}/api/items/${targetId}/restore`, { method: 'PUT' });
       if (res.ok) {
         setArchivedItems(prev => prev.filter(item => item._id !== targetId));
         await fetchItemsDatabase();
@@ -404,40 +400,37 @@ function App() {
   };
 
   const fetchArchivedItems = async () => {
-  try {
-    const token = localStorage.getItem('lostFoundToken');
-    const res = await fetch('http://localhost:5000/api/admin/archived-items', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await res.json();
-    setArchivedItems(data);
-  } catch (err) {
-    console.error("Failed to fetch archived items:", err);
-  }
-};
+    try {
+      const token = localStorage.getItem('lostFoundToken');
+      const res = await fetch(`${API_URL}/api/admin/archived-items`, {  // ✅ fixed: was single quotes
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setArchivedItems(data);
+    } catch (err) {
+      console.error("Failed to fetch archived items:", err);
+    }
+  };
 
   const handleUpdateItemSubmit = async (e, formData, id) => {
-  e.preventDefault();
-
-  try {
-    const res = await fetch(`http://localhost:5000/api/items/${id}`, {
-      method: 'PUT',
-      body: formData  // FormData already built by the modal, send as-is
-    });
-
-    if (res.ok) {
-      setEditingItem(null);
-      fetchItemsDatabase();
-      triggerNewNotification(`Listing updated successfully.`);
-    } else {
-      alert("Failed to save changes to the item listing.");
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_URL}/api/items/${id}`, {
+        method: 'PUT',
+        body: formData
+      });
+      if (res.ok) {
+        setEditingItem(null);
+        fetchItemsDatabase();
+        triggerNewNotification(`Listing updated successfully.`);
+      } else {
+        alert("Failed to save changes to the item listing.");
+      }
+    } catch (err) {
+      console.error("Connection error while sending updates to backend:", err);
     }
-  } catch (err) {
-    console.error("Connection error while sending updates to backend:", err);
-  }
-};
+  };
 
-  // FIX 1: Guard against undefined _id or userId before building the room string
   const handleInitializeChatConnectionBox = async (targetItemCard) => {
     if (!user) { alert("Please log in."); return }
     if (!targetItemCard?._id || !targetItemCard?.userId) {
@@ -448,7 +441,7 @@ function App() {
     setActiveChat({ roomId: generatedRoomStringId, itemTitle: targetItemCard.title, ownerId: targetItemCard.userId })
     setChatMessages([]); socket.emit('join_room', generatedRoomStringId)
     try {
-      const response = await fetch(`http://localhost:5000/api/messages/${generatedRoomStringId}`)
+      const response = await fetch(`${API_URL}/api/messages/${generatedRoomStringId}`)
       setChatMessages(await response.json())
     } catch (err) { console.error(err) }
   }
@@ -511,7 +504,6 @@ function App() {
                   {authError && <div className="alert alert-danger p-2 small text-center">{authError}</div>}
                   {authSuccess && <div className="alert alert-success p-2 small text-center">{authSuccess}</div>}
 
-                  {/* FIX 2 & 3: Single onSubmit handler — no more double preventDefault or double firing */}
                   <form onSubmit={handleAuthenticationSubmit} className="d-flex flex-column gap-3">
                     {authMode === 'register' && (
                       <div>
@@ -684,7 +676,7 @@ function App() {
 
                     <div className="mb-3">
                       <label className="form-label small fw-medium text-white-50">Change Password (Leave blank to keep current)</label>
-                      <input type="password" className="form-control bg-dark border-secondary text-white" placeholder="••••••••" value={settingsPassword} onChange={(e) => setSettingsPassword(e.target.value)} />
+                      <input type="password" className="form-dark border-secondary text-white" placeholder="••••••••" value={settingsPassword} onChange={(e) => setSettingsPassword(e.target.value)} />
                     </div>
 
                     <div className="mb-4">
