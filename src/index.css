@@ -1,0 +1,75 @@
+/* ==========================================================================
+   GLOBAL VIEWPORT & MOBILE OVERFLOW RESETS
+   ========================================================================== */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;         /* Prevents horizontal scrolling across the entire site */
+  background-color: #0f172a;  /* Dark fallback color so a white screen never flashes */
+}
+
+/* Forces form placeholder texts to have high contrast visibility on dark themes */
+input::placeholder, 
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+  opacity: 1 !important;
+}
+
+/* Enhances browser file select description text visibility */
+input[type="file"]::file-selector-button {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+  border: 1px solid #475569 !important;
+  border-radius: 6px !important;
+}
+
+/* ==========================================================================
+   THEMING & ANIMATION INFRASTRUCTURE
+   ========================================================================== */
+
+/* Custom Vibrant Animated Gradient Background */
+.animated-pulse-bg {
+  /* Define a rich, vibrant multi-color gradient loop */
+  background: linear-gradient(-45deg, #0f172a, #1e1b4b, #2e1065, #172554, #0f172a);
+  background-size: 400% 400%;
+  animation: dynamicGradientShift 15s ease infinite;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;           /* Forces the background container to respect mobile view boundaries */
+  overflow-x: hidden;         /* Secondary safety latch for rogue child elements */
+  transition: all 0.5s ease;
+}
+
+/* The fluid motion translation engine */
+@keyframes dynamicGradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* ==========================================================================
+   GLASSMORPHISM LAYERS
+   ========================================================================== */
+
+/* Optional: Make your card containers look slightly glassy on top of the movement */
+.card {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background-color: rgba(30, 41, 59, 0.75) !important; /* Semi-transparent Slate-800 */
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Glassmorphism Navbar styling */
+.glass-navbar {
+  background-color: rgba(15, 23, 42, 0.6) !important; /* Semi-transparent midnight base */
+  backdrop-filter: blur(12px); /* Blurs the moving background underneath */
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important; /* Subtle divider */
+}
